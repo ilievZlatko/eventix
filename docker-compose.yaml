@@ -1,0 +1,18 @@
+version: '3.9'
+
+services:
+  postgres:
+    image: postgres:16
+    container_name: eventix-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: Password123!
+      POSTGRES_DB: eventix
+    ports:
+      - 5432:5432
+    volumes:
+      - eventix_postgres_data:/var/lib/postgresql/data
+
+volumes:
+  eventix_postgres_data:
