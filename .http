@@ -23,3 +23,46 @@ Content-Type: application/json
     "password": "Password123!",
     "role": "user"
 }
+
+### Login organizer
+# @name login_organizer
+POST {{api_url}}/auth/login
+Content-Type: application/json
+
+{
+    "email": "organizer@example.com",
+    "password": "Password123!"
+}
+
+# Store access token from the last login response
+@access_token = {{login_organizer.response.body.$.access_token}}
+
+### Get me
+GET {{api_url}}/me
+Authorization: Bearer {{access_token}}
+
+### Create event
+POST {{api_url}}/events
+Content-Type: application/json
+Authorization: Bearer {{access_token}}
+
+{
+    "title": "Javascript Conference 2026",
+    "description": "Javascript Conference 2026 is a conference about the Javascript programming language",
+    "location": "Amsterdam, Netherlands",
+    "starts_at": "2026-03-11T10:00:00Z",
+    "ends_at": "2026-03-11T11:00:00Z",
+    "capacity": 1000
+}
+
+### Get all events
+# @name get_all_events
+GET {{api_url}}/events
+Authorization: Bearer {{access_token}}
+
+# Store event ID from the last get all events response
+@event_id = {{get_all_events.response.body.$[0].id}}
+
+### Get event by ID
+GET {{api_url}}/events/{{event_id}}
+Authorization: Bearer {{access_token}}

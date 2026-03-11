@@ -11,14 +11,21 @@ import (
 	authutil "github.com/ilievZlatko/eventix-api/internal/platform/auth"
 )
 
-var ErrEmailAlreadyExists = errors.New("email already exists")
+var (
+	ErrEmailAlreadyExists = errors.New("email already exists")
+	ErrInvalidCredentials = errors.New("invalid credentials")
+)
 
 type Service struct {
 	usersRepo *users.Repository
+	jwtSecret string
 }
 
-func NewService(usersRepo *users.Repository) *Service {
-	return &Service{usersRepo: usersRepo}
+func NewService(usersRepo *users.Repository, jwtSecret string) *Service {
+	return &Service{
+		usersRepo: usersRepo,
+		jwtSecret: jwtSecret,
+	}
 }
 
 func (s *Service) Register(ctx context.Context, req RegisterRequest) error {
@@ -49,4 +56,25 @@ func (s *Service) Register(ctx context.Context, req RegisterRequest) error {
 	}
 	
 	return s.usersRepo.Create(ctx, user)
+}
+
+func (s *Service) Login(ctx context.Context, req LoginRequest) (string, error) {
+	email := strings.TrimSpace(strings.ToLower(req.Email))
+
+	user, err := s.usersRepo.FindByEmail(ctx, email)
+	if err != nil {
+		return "", ErrInvalidCredentials
+	}
+
+	err = authutil.VerifyPassword(req.Password, user.PasswordHash)
+	if err != nil {
+		return "", ErrInvalidCredentials
+	}
+
+	token, err := GenerateToken(s.jwtSecret, user.ID, user.Email, user.Role)
+	if err != nil {
+		return "", err
+	}
+
+	return token, nil
 }

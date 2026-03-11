@@ -6,45 +6,65 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/ilievZlatko/eventix-api/internal/modules/auth"
+	"github.com/ilievZlatko/eventix-api/internal/modules/events"
 	"github.com/ilievZlatko/eventix-api/internal/modules/users"
 	"github.com/ilievZlatko/eventix-api/internal/platform/config"
 	"github.com/ilievZlatko/eventix-api/internal/platform/db"
+	"github.com/ilievZlatko/eventix-api/internal/platform/middleware"
 )
 
 func main() {
 	// LOAD CONFIG
-	config := config.Load()
-	pool, err := db.NewPool(config)
-
+	cfg := config.Load()
+	pool, err := db.NewPool(cfg)
 	if err != nil {
 		log.Fatal(err)
 	}
-	
 	defer pool.Close()
 
-	// CREATE CONFIGURATIONS
+	// USERS MODULE
 	usersRepo := users.NewRepository(pool)
-	authService := auth.NewService(usersRepo)
+	usersHandler := users.NewHandler()
+
+	// AUTH MODULE
+	authService := auth.NewService(usersRepo, cfg.JWTSecret)
 	authHandler := auth.NewHandler(authService)
+
+	// EVENTS MODULE
+	eventsRepo := events.NewRepository(pool)
+	eventsService := events.NewService(eventsRepo)
+	eventsHandler := events.NewHandler(eventsService)
+	
 
 	// CREATE ROUTER
 	router := gin.Default()
+
 	api := router.Group("/api")
 	v1 := api.Group("/v1")
+	protected := v1.Group("/")
 
 	// HEALTH CHECK ROUTE
 	v1.GET("/health", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"status": "OK"})
 	})
 
+	// EVENTS ROUTES
+	v1.GET("/events", eventsHandler.FindAll)
+	v1.GET("/events/:id", eventsHandler.FindByID)
+
 	// AUTH ROUTES
 	authGroup := v1.Group("/auth")
 	authGroup.POST("/register", authHandler.Register)
+	authGroup.POST("/login", authHandler.Login)
 
+	// PROTECTED ROUTES
+	protected.Use(middleware.AuthMiddleware(cfg.JWTSecret))
+	protected.GET("/me", usersHandler.Me)
+	protected.POST("/events", eventsHandler.Create)
 
 	// START SERVER
-	log.Printf("API running on port: %s", config.AppPort)
-	if err := router.Run(":" + config.AppPort); err != nil {
+	log.Printf("API running on port: %s", cfg.AppPort)
+	if err := router.Run(":" + cfg.AppPort); err != nil {
 		log.Fatal(err)
 	}
 }

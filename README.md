@@ -17,7 +17,7 @@ This project is also part of a **progressive learning journey**, evolving from a
 - PostgreSQL
 - pgx
 - bcrypt
-- JWT (coming next)
+- JWT authentication
 - golang-migrate
 - Air (live reload)
 
@@ -121,13 +121,31 @@ Base URL
 /api/v1
 ```
 
-## Health check
+---
+
+# Authentication
+
+The API uses **JWT authentication**.
+
+Login returns an access token which must be included in protected requests:
+
+```
+Authorization: Bearer <token>
+```
+
+---
+
+# Endpoints
+
+## Health Check
 
 ```
 GET /api/v1/health
 ```
 
-## Register user
+---
+
+## Register User
 
 ```
 POST /api/v1/auth/register
@@ -140,6 +158,95 @@ Example request:
   "email": "zlatko@example.com",
   "password": "Password123!",
   "role": "organizer"
+}
+```
+
+---
+
+## Login
+
+```
+POST /api/v1/auth/login
+```
+
+Response:
+
+```json
+{
+  "accessToken": "jwt_token_here"
+}
+```
+
+---
+
+## Get Current User
+
+Protected endpoint.
+
+```
+GET /api/v1/me
+```
+
+Headers:
+
+```
+Authorization: Bearer <token>
+```
+
+Example response:
+
+```json
+{
+  "id": "uuid",
+  "email": "zlatko@example.com",
+  "role": "organizer"
+}
+```
+
+---
+
+# Events
+
+## Get All Events
+
+```
+GET /api/v1/events
+```
+
+---
+
+## Get Event By ID
+
+```
+GET /api/v1/events/:id
+```
+
+---
+
+## Create Event
+
+Only users with role **organizer** can create events.
+
+```
+POST /api/v1/events
+```
+
+Headers:
+
+```
+Authorization: Bearer <token>
+```
+
+Example request:
+
+```json
+{
+  "title": "Go Conference 2026",
+  "description": "A conference for Go developers",
+  "location": "Sofia, Bulgaria",
+  "startsAt": "2026-04-10T09:00:00Z",
+  "endsAt": "2026-04-10T18:00:00Z",
+  "capacity": 150
 }
 ```
 
@@ -180,25 +287,25 @@ Routes are stored in `.http` files and can be executed directly from the editor.
 
 # Roadmap
 
-## Phase 1
+## Phase 1 (Current)
 
 - User registration
 - Login
 - JWT authentication
-- Event CRUD
-- Booking system
+- Event creation
+- Event listing
 
 ## Phase 2
 
+- Booking system
 - Organizer dashboard
 - Event search and filters
 - Pagination
-- Validation improvements
 
 ## Phase 3
 
 - Redis caching
-- RabbitMQ event system
+- RabbitMQ event processing
 
 ## Phase 4
 
