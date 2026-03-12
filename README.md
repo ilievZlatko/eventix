@@ -82,7 +82,7 @@ Each module contains its own:
 - services
 - handlers
 
-This approach keeps the code organized while still deploying as a single service.
+This keeps the codebase organized while still deploying as a single service.
 
 ---
 
@@ -144,6 +144,8 @@ GET /api/v1/health
 ```
 
 ---
+
+# Authentication
 
 ## Register User
 
@@ -252,9 +254,74 @@ Example request:
 
 ---
 
+# Bookings
+
+Users can book events and manage their bookings.
+
+---
+
+## Create Booking
+
+```
+POST /api/v1/events/:id/bookings
+```
+
+Headers:
+
+```
+Authorization: Bearer <token>
+```
+
+Rules enforced:
+
+- user cannot book the same event twice
+- event capacity cannot be exceeded
+
+---
+
+## Get My Bookings
+
+```
+GET /api/v1/me/bookings
+```
+
+Headers:
+
+```
+Authorization: Bearer <token>
+```
+
+Returns all bookings for the authenticated user.
+
+---
+
+## Cancel Booking
+
+```
+DELETE /api/v1/bookings/:id
+```
+
+Headers:
+
+```
+Authorization: Bearer <token>
+```
+
+Users can only cancel **their own bookings**.
+
+---
+
 # Database
 
 PostgreSQL is used as the primary database.
+
+Tables currently implemented:
+
+```
+users
+events
+bookings
+```
 
 Migrations are managed with **golang-migrate**.
 
@@ -279,9 +346,26 @@ Live reload for Go development.
 air
 ```
 
-### HTTP API testing
+---
 
-Routes are stored in `.http` files and can be executed directly from the editor.
+### HTTP API Testing
+
+API routes are stored in `.http` files and can be executed directly from the editor.
+
+---
+
+# Current MVP Features
+
+Eventix now supports:
+
+- User registration
+- User login
+- JWT authentication
+- Organizer event creation
+- Event discovery
+- Event booking
+- Booking cancellation
+- Viewing user bookings
 
 ---
 
@@ -289,18 +373,16 @@ Routes are stored in `.http` files and can be executed directly from the editor.
 
 ## Phase 1 (Current)
 
-- User registration
-- Login
-- JWT authentication
-- Event creation
-- Event listing
+- Authentication
+- Event management
+- Booking system
 
 ## Phase 2
 
-- Booking system
-- Organizer dashboard
-- Event search and filters
+- Event search and filtering
 - Pagination
+- Validation improvements
+- Organizer dashboards
 
 ## Phase 3
 

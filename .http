@@ -34,17 +34,28 @@ Content-Type: application/json
     "password": "Password123!"
 }
 
+### Login user
+# @name login_user
+POST {{api_url}}/auth/login
+Content-Type: application/json
+
+{
+    "email": "user@example.com",
+    "password": "Password123!"
+}
+
 # Store access token from the last login response
-@access_token = {{login_organizer.response.body.$.access_token}}
+@access_token_organizer = {{login_organizer.response.body.$.access_token}}
+@access_token_user = {{login_user.response.body.$.access_token}}
 
 ### Get me
 GET {{api_url}}/me
-Authorization: Bearer {{access_token}}
+Authorization: Bearer {{access_token_user}}
 
 ### Create event
 POST {{api_url}}/events
 Content-Type: application/json
-Authorization: Bearer {{access_token}}
+Authorization: Bearer {{access_token_user}}
 
 {
     "title": "Javascript Conference 2026",
@@ -58,11 +69,27 @@ Authorization: Bearer {{access_token}}
 ### Get all events
 # @name get_all_events
 GET {{api_url}}/events
-Authorization: Bearer {{access_token}}
+Authorization: Bearer {{access_token_user}}
 
 # Store event ID from the last get all events response
 @event_id = {{get_all_events.response.body.$[0].id}}
 
 ### Get event by ID
 GET {{api_url}}/events/{{event_id}}
-Authorization: Bearer {{access_token}}
+Authorization: Bearer {{access_token_user}}
+
+### Create booking
+# @name create_booking
+POST {{api_url}}/events/{{event_id}}/bookings
+Authorization: Bearer {{access_token_user}}
+
+# Store booking ID from the last create booking response
+@booking_id = {{create_booking.response.body.$.id}}
+
+### Get my bookings
+GET {{api_url}}/bookings
+Authorization: Bearer {{access_token_user}}
+
+### Cancel booking
+DELETE {{api_url}}/bookings/{{booking_id}}
+Authorization: Bearer {{access_token_user}}
