@@ -6,6 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/ilievZlatko/eventix-api/internal/modules/auth"
+	"github.com/ilievZlatko/eventix-api/internal/modules/bookings"
 	"github.com/ilievZlatko/eventix-api/internal/modules/events"
 	"github.com/ilievZlatko/eventix-api/internal/modules/users"
 	"github.com/ilievZlatko/eventix-api/internal/platform/config"
@@ -17,9 +18,11 @@ func main() {
 	// LOAD CONFIG
 	cfg := config.Load()
 	pool, err := db.NewPool(cfg)
+
 	if err != nil {
 		log.Fatal(err)
 	}
+	
 	defer pool.Close()
 
 	// USERS MODULE
@@ -34,6 +37,11 @@ func main() {
 	eventsRepo := events.NewRepository(pool)
 	eventsService := events.NewService(eventsRepo)
 	eventsHandler := events.NewHandler(eventsService)
+
+	// BOOKINGS MODULE
+	bookingsRepo := bookings.NewRepository(pool)
+	bookingsService := bookings.NewService(bookingsRepo, eventsRepo)
+	bookingsHandler := bookings.NewHandler(bookingsService)
 	
 
 	// CREATE ROUTER
@@ -60,10 +68,16 @@ func main() {
 	// PROTECTED ROUTES
 	protected.Use(middleware.AuthMiddleware(cfg.JWTSecret))
 	protected.GET("/me", usersHandler.Me)
+
 	protected.POST("/events", eventsHandler.Create)
+	protected.POST("/events/:id/bookings", bookingsHandler.Create)
+
+	protected.GET("/bookings", bookingsHandler.FindMyBookings)
+	protected.DELETE("/bookings/:id", bookingsHandler.Cancel)
 
 	// START SERVER
 	log.Printf("API running on port: %s", cfg.AppPort)
+
 	if err := router.Run(":" + cfg.AppPort); err != nil {
 		log.Fatal(err)
 	}
