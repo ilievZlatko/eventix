@@ -2,6 +2,7 @@ package events
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -52,13 +53,32 @@ func (h *Handler) Create(c *gin.Context) {
 }
 
 func (h *Handler) FindAll(c *gin.Context) {
-	events, err := h.service.FindAll(c.Request.Context())
+	page := 1
+	limit := 10
+
+	if p := c.Query("page"); p != "" {
+		fmt.Sscanf(p, "%d", &page)
+	}
+
+	if l := c.Query("limit"); l != "" {
+		fmt.Sscanf(l, "%d", &limit)
+	}
+
+	offset := (page - 1) * limit
+	
+	events, err := h.service.FindAll(c.Request.Context(), limit, offset)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get events"})
 		return
 	}
 
-	c.JSON(http.StatusOK, events)
+	c.JSON(http.StatusOK, gin.H{
+		"data": events,
+		"meta": gin.H{
+			"page": page,
+			"limit": limit,
+		},
+	})
 }
 
 func (h *Handler) FindByID(c *gin.Context) {

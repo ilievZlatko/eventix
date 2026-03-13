@@ -42,15 +42,16 @@ func (r *Repository) Create(ctx context.Context, event Event) error {
 	return err
 }
 
-func (r *Repository) FindAll(ctx context.Context) ([]Event, error) {
+func (r *Repository) FindAll(ctx context.Context, limit, offset int) ([]Event, error) {
 	query := `
 		SELECT id, title, description, location, starts_at, ends_at,
 					 capacity, created_by, created_at, updated_at
 		FROM events
 		ORDER BY starts_at ASC
+		LIMIT $1 OFFSET $2
 	`
 
-	rows, err := r.db.Query(ctx, query)
+	rows, err := r.db.Query(ctx, query, limit, offset)
 	if err != nil {
 		return nil, err
 	}

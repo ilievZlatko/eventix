@@ -2,9 +2,9 @@
 
 Eventix is a modern event booking platform built with **Go** and **React** in a **monorepo architecture**.
 
-The goal of this project is to simulate a **real-world production SaaS platform** similar to Eventbrite or Eventim, supporting event discovery, ticket booking, and organizer dashboards.
+The goal of this project is to simulate a **real-world production SaaS platform** similar to Eventbrite or Eventim, supporting event discovery, event creation, and booking management.
 
-This project is also part of a **progressive learning journey**, evolving from a monolith into a full cloud-native architecture with microservices, Kubernetes, and observability.
+This project is also part of a **progressive backend architecture journey**, evolving from a modular monolith into a cloud-native system with microservices, messaging, Kubernetes, and observability.
 
 ---
 
@@ -57,7 +57,7 @@ eventix
 
 # Backend Architecture
 
-The backend follows a **modular monolith** architecture.
+The backend follows a **modular monolith architecture**.
 
 ```
 internal
@@ -82,17 +82,17 @@ Each module contains its own:
 - services
 - handlers
 
-This keeps the codebase organized while still deploying as a single service.
+This keeps the codebase clean and scalable while still deploying as a single service.
 
 ---
 
 # Running the Project
 
-## Start database
+## Start the database
 
-From the repo root:
+From the repository root:
 
-```
+```bash
 docker compose up -d
 ```
 
@@ -100,15 +100,89 @@ docker compose up -d
 
 ## Run backend
 
-```
+```bash
 cd apps/api
 air
 ```
 
-Server will start at:
+Server starts at:
 
 ```
 http://localhost:8080
+```
+
+---
+
+# Database Migrations
+
+Migrations are handled using **golang-migrate**.
+
+Run migrations:
+
+```bash
+migrate \
+-path apps/api/migrations \
+-database "postgres://postgres:Password123%21@localhost:5432/eventix?sslmode=disable" \
+up
+```
+
+---
+
+# Database Seeding
+
+For local development the project includes a **seed script** that populates the database with test data.
+
+The seed script creates:
+
+- organizers
+- users
+- events
+- bookings
+- additional sample events for pagination testing
+
+### Default Seed Users
+
+| Email                  | Role      | Password     |
+| ---------------------- | --------- | ------------ |
+| organizer1@example.com | organizer | Password123! |
+| organizer2@example.com | organizer | Password123! |
+| attendee1@example.com  | user      | Password123! |
+| attendee2@example.com  | user      | Password123! |
+
+### Run the seed script
+
+From `apps/api`:
+
+```bash
+go run ./cmd/api/seed
+```
+
+This will populate the database with sample users, events, and bookings.
+
+---
+
+### Reset local database (optional)
+
+If you want to start from a clean database:
+
+```bash
+docker compose down -v
+docker compose up -d
+```
+
+Run migrations again:
+
+```bash
+migrate \
+-path apps/api/migrations \
+-database "postgres://postgres:Password123%21@localhost:5432/eventix?sslmode=disable" \
+up
+```
+
+Then seed again:
+
+```bash
+go run ./cmd/api/seed
 ```
 
 ---
@@ -127,7 +201,7 @@ Base URL
 
 The API uses **JWT authentication**.
 
-Login returns an access token which must be included in protected requests:
+Login returns an access token which must be included in protected requests.
 
 ```
 Authorization: Bearer <token>
@@ -157,7 +231,7 @@ Example request:
 
 ```json
 {
-  "email": "zlatko@example.com",
+  "email": "user@example.com",
   "password": "Password123!",
   "role": "organizer"
 }
@@ -171,7 +245,7 @@ Example request:
 POST /api/v1/auth/login
 ```
 
-Response:
+Example response:
 
 ```json
 {
@@ -182,8 +256,6 @@ Response:
 ---
 
 ## Get Current User
-
-Protected endpoint.
 
 ```
 GET /api/v1/me
@@ -200,7 +272,7 @@ Example response:
 ```json
 {
   "id": "uuid",
-  "email": "zlatko@example.com",
+  "email": "user@example.com",
   "role": "organizer"
 }
 ```
@@ -209,10 +281,24 @@ Example response:
 
 # Events
 
-## Get All Events
+## Get Events
+
+Supports pagination.
 
 ```
-GET /api/v1/events
+GET /api/v1/events?page=1&limit=10
+```
+
+Example response:
+
+```json
+{
+  "data": [],
+  "meta": {
+    "page": 1,
+    "limit": 10
+  }
+}
 ```
 
 ---
@@ -244,11 +330,11 @@ Example request:
 ```json
 {
   "title": "Go Conference 2026",
-  "description": "A conference for Go developers",
-  "location": "Sofia, Bulgaria",
+  "description": "A conference about Go",
+  "location": "Berlin",
   "startsAt": "2026-04-10T09:00:00Z",
   "endsAt": "2026-04-10T18:00:00Z",
-  "capacity": 150
+  "capacity": 100
 }
 ```
 
@@ -266,12 +352,6 @@ Users can book events and manage their bookings.
 POST /api/v1/events/:id/bookings
 ```
 
-Headers:
-
-```
-Authorization: Bearer <token>
-```
-
 Rules enforced:
 
 - user cannot book the same event twice
@@ -282,16 +362,27 @@ Rules enforced:
 ## Get My Bookings
 
 ```
-GET /api/v1/me/bookings
+GET /api/v1/bookings
 ```
 
-Headers:
+Returns bookings for the authenticated user including event details.
 
-```
-Authorization: Bearer <token>
-```
+Example response:
 
-Returns all bookings for the authenticated user.
+```json
+[
+  {
+    "id": "booking-id",
+    "createdAt": "2026-03-12T10:00:00Z",
+    "event": {
+      "id": "event-id",
+      "title": "Go Conference 2026",
+      "location": "Berlin",
+      "startsAt": "2026-04-10T09:00:00Z"
+    }
+  }
+]
+```
 
 ---
 
@@ -301,38 +392,7 @@ Returns all bookings for the authenticated user.
 DELETE /api/v1/bookings/:id
 ```
 
-Headers:
-
-```
-Authorization: Bearer <token>
-```
-
 Users can only cancel **their own bookings**.
-
----
-
-# Database
-
-PostgreSQL is used as the primary database.
-
-Tables currently implemented:
-
-```
-users
-events
-bookings
-```
-
-Migrations are managed with **golang-migrate**.
-
-Run migrations:
-
-```
-migrate \
-  -path apps/api/migrations \
-  -database "postgres://postgres:Password123%21@localhost:5432/eventix?sslmode=disable" \
-  up
-```
 
 ---
 
@@ -342,7 +402,7 @@ migrate \
 
 Live reload for Go development.
 
-```
+```bash
 air
 ```
 
@@ -356,16 +416,18 @@ API routes are stored in `.http` files and can be executed directly from the edi
 
 # Current MVP Features
 
-Eventix now supports:
+Eventix currently supports:
 
 - User registration
 - User login
 - JWT authentication
 - Organizer event creation
 - Event discovery
+- Pagination for events
 - Event booking
 - Booking cancellation
 - Viewing user bookings
+- Database seeding
 
 ---
 
@@ -376,11 +438,12 @@ Eventix now supports:
 - Authentication
 - Event management
 - Booking system
+- Pagination
 
 ## Phase 2
 
 - Event search and filtering
-- Pagination
+- Pagination improvements
 - Validation improvements
 - Organizer dashboards
 

@@ -68,7 +68,7 @@ func (s *Service) Create(ctx context.Context, eventID, userID string) error {
 	return s.repo.Create(ctx, booking)
 }
 
-func (s *Service) FindByUserID(ctx context.Context, userID string) ([]Booking, error) {
+func (s *Service) FindByUserID(ctx context.Context, userID string) ([]BookingWithEvent, error) {
 	return s.repo.FindByUserID(ctx, userID)
 }
 

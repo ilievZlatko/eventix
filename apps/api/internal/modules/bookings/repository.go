@@ -67,12 +67,19 @@ func (r *Repository) CountByEventID(ctx context.Context, eventID string) (int, e
 	return count, nil
 }
 
-func (r *Repository) FindByUserID(ctx context.Context, userID string) ([]Booking, error) {
+func (r *Repository) FindByUserID(ctx context.Context, userID string) ([]BookingWithEvent, error) {
 	query := `
-		SELECT id, event_id, user_id, created_at, updated_at
-		FROM bookings
-		WHERE user_id = $1
-		ORDER BY created_at DESC
+		SELECT
+			b.id,
+			b.created_at,
+			e.id,
+			e.title,
+			e.location,
+			e.starts_at
+		FROM bookings b
+		INNER JOIN events e ON e.id = b.event_id
+		WHERE b.user_id = $1
+		ORDER BY b.created_at DESC
 	`
 
 	rows, err := r.db.Query(ctx, query, userID)
@@ -81,17 +88,18 @@ func (r *Repository) FindByUserID(ctx context.Context, userID string) ([]Booking
 	}
 	defer rows.Close()
 
-	var bookings []Booking
+	var bookings []BookingWithEvent
 
 	for rows.Next() {
-		var booking Booking
+		var booking BookingWithEvent
 	
 		err := rows.Scan(
 			&booking.ID,
-			&booking.EventID,
-			&booking.UserID,
 			&booking.CreatedAt,
-			&booking.UpdatedAt,
+			&booking.Event.ID,
+			&booking.Event.Title,
+			&booking.Event.Location,
+			&booking.Event.StartsAt,
 		)
 		if err != nil {
 			return nil, err

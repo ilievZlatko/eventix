@@ -56,22 +56,22 @@ func main() {
 		c.JSON(http.StatusOK, gin.H{"status": "OK"})
 	})
 
-	// EVENTS ROUTES
-	v1.GET("/events", eventsHandler.FindAll)
-	v1.GET("/events/:id", eventsHandler.FindByID)
-
 	// AUTH ROUTES
 	authGroup := v1.Group("/auth")
 	authGroup.POST("/register", authHandler.Register)
 	authGroup.POST("/login", authHandler.Login)
 
-	// PROTECTED ROUTES
 	protected.Use(middleware.AuthMiddleware(cfg.JWTSecret))
 	protected.GET("/me", usersHandler.Me)
+
+	// EVENTS ROUTES
+	v1.GET("/events", eventsHandler.FindAll)
+	v1.GET("/events/:id", eventsHandler.FindByID)
 
 	protected.POST("/events", eventsHandler.Create)
 	protected.POST("/events/:id/bookings", bookingsHandler.Create)
 
+	// BOOKINGS ROUTES
 	protected.GET("/bookings", bookingsHandler.FindMyBookings)
 	protected.DELETE("/bookings/:id", bookingsHandler.Cancel)
 

@@ -4,58 +4,38 @@
 ### Health check
 GET {{api_url}}/health
 
-### Register organizer
-POST {{api_url}}/auth/register
-Content-Type: application/json
-
-{
-    "email": "organizer@example.com",
-    "password": "Password123!",
-    "role": "organizer"
-}
-
-### Register normal user
-POST {{api_url}}/auth/register
-Content-Type: application/json
-
-{
-    "email": "user@example.com",
-    "password": "Password123!",
-    "role": "user"
-}
-
-### Login organizer
+### Login organizer 1 (seeded)
 # @name login_organizer
 POST {{api_url}}/auth/login
 Content-Type: application/json
 
 {
-    "email": "organizer@example.com",
+    "email": "organizer1@example.com",
     "password": "Password123!"
 }
 
-### Login user
-# @name login_user
+### Login attendee 1 (seeded)
+# @name login_attendee1
 POST {{api_url}}/auth/login
 Content-Type: application/json
 
 {
-    "email": "user@example.com",
+    "email": "attendee1@example.com",
     "password": "Password123!"
 }
 
 # Store access token from the last login response
 @access_token_organizer = {{login_organizer.response.body.$.access_token}}
-@access_token_user = {{login_user.response.body.$.access_token}}
+@access_token_attendee1 = {{login_attendee1.response.body.$.access_token}}
 
 ### Get me
 GET {{api_url}}/me
-Authorization: Bearer {{access_token_user}}
+Authorization: Bearer {{access_token_attendee1}}
 
 ### Create event
 POST {{api_url}}/events
 Content-Type: application/json
-Authorization: Bearer {{access_token_user}}
+Authorization: Bearer {{access_token_organizer}}
 
 {
     "title": "Javascript Conference 2026",
@@ -69,27 +49,32 @@ Authorization: Bearer {{access_token_user}}
 ### Get all events
 # @name get_all_events
 GET {{api_url}}/events
-Authorization: Bearer {{access_token_user}}
+Authorization: Bearer {{access_token_attendee1}}
+
+# Get first page of events (limit 10)
+### Get paginated events
+GET {{api_url}}/events?limit=10&offset=0
+Authorization: Bearer {{access_token_attendee1}}
 
 # Store event ID from the last get all events response
 @event_id = {{get_all_events.response.body.$[0].id}}
 
 ### Get event by ID
 GET {{api_url}}/events/{{event_id}}
-Authorization: Bearer {{access_token_user}}
+Authorization: Bearer {{access_token_attendee1}}
 
 ### Create booking
 # @name create_booking
 POST {{api_url}}/events/{{event_id}}/bookings
-Authorization: Bearer {{access_token_user}}
+Authorization: Bearer {{access_token_attendee1}}
 
 # Store booking ID from the last create booking response
 @booking_id = {{create_booking.response.body.$.id}}
 
 ### Get my bookings
 GET {{api_url}}/bookings
-Authorization: Bearer {{access_token_user}}
+Authorization: Bearer {{access_token_attendee1}}
 
 ### Cancel booking
 DELETE {{api_url}}/bookings/{{booking_id}}
-Authorization: Bearer {{access_token_user}}
+Authorization: Bearer {{access_token_attendee1}}

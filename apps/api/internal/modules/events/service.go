@@ -48,8 +48,8 @@ func (s *Service) Create(ctx context.Context, req CreateEventRequest, userID, ro
 	return s.repo.Create(ctx, event)
 }
 
-func (s *Service) FindAll(ctx context.Context) ([]Event, error) {
-	return s.repo.FindAll(ctx)
+func (s *Service) FindAll(ctx context.Context, limit, offset int) ([]Event, error) {
+	return s.repo.FindAll(ctx, limit, offset)
 }
 
 func (s *Service) FindByID(ctx context.Context, id string) (*Event, error) {
