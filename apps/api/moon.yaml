@@ -1,0 +1,31 @@
+language: 'go'
+
+tasks:
+  dev:
+    command: 'air'
+    options:
+      persistent: true
+      cache: false
+      outputStyle: 'stream'
+
+  run:
+    command: 'go run ./cmd/api'
+    options:
+      persistent: true
+      cache: false
+      outputStyle: 'stream'
+
+  build:
+    command: 'go build -o bin/api ./cmd/api'
+
+  seed:
+    command: 'go run ./cmd/api/seed'
+    options:
+      cache: false
+      runInCI: false
+
+  migrate-up:
+    command: 'migrate -path migrations -database "postgres://postgres:Password123%21@localhost:5432/eventix?sslmode=disable" up'
+
+  migrate-down:
+    command: 'migrate -path migrations -database "postgres://postgres:Password123%21@localhost:5432/eventix?sslmode=disable" down'

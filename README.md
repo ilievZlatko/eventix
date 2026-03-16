@@ -2,9 +2,19 @@
 
 Eventix is a modern event booking platform built with **Go** and **React** in a **monorepo architecture**.
 
-The goal of this project is to simulate a **real-world production SaaS platform** similar to Eventbrite or Eventim, supporting event discovery, event creation, and booking management.
+The goal of this project is to simulate a **real-world production SaaS platform** similar to Eventbrite or Eventim, supporting:
 
-This project is also part of a **progressive backend architecture journey**, evolving from a modular monolith into a cloud-native system with microservices, messaging, Kubernetes, and observability.
+- event discovery
+- event creation
+- event bookings
+- user authentication
+
+This project is also part of a **progressive architecture journey**, evolving from a modular monolith into a distributed cloud-native system with:
+
+- messaging
+- microservices
+- Kubernetes
+- observability
 
 ---
 
@@ -16,19 +26,27 @@ This project is also part of a **progressive backend architecture journey**, evo
 - Gin
 - PostgreSQL
 - pgx
-- bcrypt
 - JWT authentication
+- bcrypt
 - golang-migrate
 - Air (live reload)
+- CORS middleware
+
+---
 
 ## Frontend
 
 - React
-- TypeScript
 - Vite
+- TypeScript
+- React Router
+- TanStack Query
+- Zustand
 - TailwindCSS
 - shadcn/ui
-- Zustand
+- Sonner (toast notifications)
+
+---
 
 ## Infrastructure
 
@@ -75,14 +93,47 @@ internal
     └── middleware
 ```
 
-Each module contains its own:
+Each module contains:
 
 - models
 - repositories
 - services
 - handlers
 
-This keeps the codebase clean and scalable while still deploying as a single service.
+This structure keeps the codebase organized and scalable while still deploying as a single service.
+
+---
+
+# Frontend Architecture
+
+The frontend is built using **feature-based architecture**.
+
+```
+src
+│
+├── app
+│   ├── router.tsx
+│   └── query-client.ts
+│
+├── components
+│   └── ui            # shadcn/ui components
+│
+├── features
+│   └── auth
+│       ├── api
+│       └── hooks
+│
+├── layouts
+│
+├── pages
+│
+├── stores
+│
+└── lib
+    └── api.ts
+```
+
+Server state is handled with **TanStack Query**, while **Zustand manages session state**.
 
 ---
 
@@ -101,21 +152,42 @@ docker compose up -d
 ## Run backend
 
 ```bash
-cd apps/api
-air
+moon run api:dev
 ```
 
-Server starts at:
+---
+
+## Run frontend
+
+```bash
+moon run web:dev
+```
+
+---
+
+## Run both
+
+```bash
+moon run :dev
+```
+
+Backend:
 
 ```
 http://localhost:8080
+```
+
+Frontend:
+
+```
+http://localhost:5173
 ```
 
 ---
 
 # Database Migrations
 
-Migrations are handled using **golang-migrate**.
+Migrations are handled with **golang-migrate**.
 
 Run migrations:
 
@@ -130,17 +202,25 @@ up
 
 # Database Seeding
 
-For local development the project includes a **seed script** that populates the database with test data.
+The project includes a **seed script** for local development.
 
-The seed script creates:
+It creates:
 
 - organizers
 - users
 - events
 - bookings
-- additional sample events for pagination testing
+- additional events for pagination testing
 
-### Default Seed Users
+Run seed:
+
+```bash
+moon run api:seed
+```
+
+---
+
+# Default Seed Users
 
 | Email                  | Role      | Password     |
 | ---------------------- | --------- | ------------ |
@@ -148,42 +228,6 @@ The seed script creates:
 | organizer2@example.com | organizer | Password123! |
 | attendee1@example.com  | user      | Password123! |
 | attendee2@example.com  | user      | Password123! |
-
-### Run the seed script
-
-From `apps/api`:
-
-```bash
-go run ./cmd/api/seed
-```
-
-This will populate the database with sample users, events, and bookings.
-
----
-
-### Reset local database (optional)
-
-If you want to start from a clean database:
-
-```bash
-docker compose down -v
-docker compose up -d
-```
-
-Run migrations again:
-
-```bash
-migrate \
--path apps/api/migrations \
--database "postgres://postgres:Password123%21@localhost:5432/eventix?sslmode=disable" \
-up
-```
-
-Then seed again:
-
-```bash
-go run ./cmd/api/seed
-```
 
 ---
 
@@ -201,17 +245,23 @@ Base URL
 
 The API uses **JWT authentication**.
 
-Login returns an access token which must be included in protected requests.
+Login returns an access token.
 
+Example response:
+
+```json
+{
+  "accessToken": "jwt_token_here"
+}
 ```
-Authorization: Bearer <token>
-```
+
+Frontend stores the token and attaches it automatically to requests.
 
 ---
 
 # Endpoints
 
-## Health Check
+## Health
 
 ```
 GET /api/v1/health
@@ -221,7 +271,7 @@ GET /api/v1/health
 
 # Authentication
 
-## Register User
+## Register
 
 ```
 POST /api/v1/auth/register
@@ -233,7 +283,7 @@ Example request:
 {
   "email": "user@example.com",
   "password": "Password123!",
-  "role": "organizer"
+  "role": "user"
 }
 ```
 
@@ -245,37 +295,23 @@ Example request:
 POST /api/v1/auth/login
 ```
 
-Example response:
+Response:
 
 ```json
 {
-  "accessToken": "jwt_token_here"
+  "accessToken": "..."
 }
 ```
 
 ---
 
-## Get Current User
+## Current User
 
 ```
 GET /api/v1/me
 ```
 
-Headers:
-
-```
-Authorization: Bearer <token>
-```
-
-Example response:
-
-```json
-{
-  "id": "uuid",
-  "email": "user@example.com",
-  "role": "organizer"
-}
-```
+Requires Authorization header.
 
 ---
 
@@ -303,7 +339,7 @@ Example response:
 
 ---
 
-## Get Event By ID
+## Get Event
 
 ```
 GET /api/v1/events/:id
@@ -313,36 +349,17 @@ GET /api/v1/events/:id
 
 ## Create Event
 
-Only users with role **organizer** can create events.
+Organizer only.
 
 ```
 POST /api/v1/events
-```
-
-Headers:
-
-```
-Authorization: Bearer <token>
-```
-
-Example request:
-
-```json
-{
-  "title": "Go Conference 2026",
-  "description": "A conference about Go",
-  "location": "Berlin",
-  "startsAt": "2026-04-10T09:00:00Z",
-  "endsAt": "2026-04-10T18:00:00Z",
-  "capacity": 100
-}
 ```
 
 ---
 
 # Bookings
 
-Users can book events and manage their bookings.
+Users can book events.
 
 ---
 
@@ -352,9 +369,9 @@ Users can book events and manage their bookings.
 POST /api/v1/events/:id/bookings
 ```
 
-Rules enforced:
+Rules:
 
-- user cannot book the same event twice
+- cannot book same event twice
 - event capacity cannot be exceeded
 
 ---
@@ -365,24 +382,7 @@ Rules enforced:
 GET /api/v1/bookings
 ```
 
-Returns bookings for the authenticated user including event details.
-
-Example response:
-
-```json
-[
-  {
-    "id": "booking-id",
-    "createdAt": "2026-03-12T10:00:00Z",
-    "event": {
-      "id": "event-id",
-      "title": "Go Conference 2026",
-      "location": "Berlin",
-      "startsAt": "2026-04-10T09:00:00Z"
-    }
-  }
-]
-```
+Response includes event details.
 
 ---
 
@@ -392,7 +392,21 @@ Example response:
 DELETE /api/v1/bookings/:id
 ```
 
-Users can only cancel **their own bookings**.
+Users can only cancel their own bookings.
+
+---
+
+# Frontend Features
+
+The React application currently supports:
+
+- Login page
+- Register page
+- Auth state with Zustand
+- API requests via TanStack Query
+- Global notifications using Sonner
+- shadcn/ui components
+- TailwindCSS styling
 
 ---
 
@@ -402,7 +416,7 @@ Users can only cancel **their own bookings**.
 
 Live reload for Go development.
 
-```bash
+```
 air
 ```
 
@@ -410,7 +424,7 @@ air
 
 ### HTTP API Testing
 
-API routes are stored in `.http` files and can be executed directly from the editor.
+API routes are stored in `.http` files.
 
 ---
 
@@ -423,11 +437,11 @@ Eventix currently supports:
 - JWT authentication
 - Organizer event creation
 - Event discovery
-- Pagination for events
+- Pagination
 - Event booking
 - Booking cancellation
-- Viewing user bookings
 - Database seeding
+- Frontend authentication UI
 
 ---
 
@@ -439,45 +453,57 @@ Eventix currently supports:
 - Event management
 - Booking system
 - Pagination
+- Frontend authentication
+
+---
 
 ## Phase 2
 
-- Event search and filtering
-- Pagination improvements
-- Validation improvements
+- Event search
+- Filtering
+- Protected routes
 - Organizer dashboards
+
+---
 
 ## Phase 3
 
 - Redis caching
-- RabbitMQ event processing
+- RabbitMQ
+
+---
 
 ## Phase 4
 
-- Microservices architecture
+- Microservices
 - gRPC communication
+
+---
 
 ## Phase 5
 
 - Kubernetes deployment
-- Helm charts
-- Observability (Prometheus + Grafana)
+- Helm
+- Prometheus
+- Grafana
+
+---
 
 ## Phase 6
 
 - Cloud deployment (GCP)
-- Terraform infrastructure
+- Terraform
 
 ---
 
 # Future Vision
 
-Eventix will gradually evolve into a **production-grade distributed system** including:
+Eventix will evolve into a **production-grade distributed system** including:
 
 - microservices
-- asynchronous messaging
-- scalable cloud infrastructure
-- monitoring and observability
+- async messaging
+- scalable infrastructure
+- observability
 
 ---
 

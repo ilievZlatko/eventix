@@ -1,0 +1,22 @@
+language: 'typescript'
+
+tasks:
+  dev:
+    command: 'pnpm dev'
+    options:
+      persistent: true
+      cache: false
+      outputStyle: 'stream'
+
+  build:
+    command: 'pnpm build'
+
+  preview:
+    command: 'pnpm preview'
+    options:
+      persistent: true
+      cache: false
+      outputStyle: 'stream'
+
+  lint:
+    command: 'pnpm lint'

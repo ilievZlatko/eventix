@@ -3,7 +3,9 @@ package main
 import (
 	"log"
 	"net/http"
+	"time"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/ilievZlatko/eventix-api/internal/modules/auth"
 	"github.com/ilievZlatko/eventix-api/internal/modules/bookings"
@@ -46,6 +48,14 @@ func main() {
 
 	// CREATE ROUTER
 	router := gin.Default()
+
+	router.Use(cors.New(cors.Config{
+		AllowOrigins: 		[]string{"http://localhost:5173"},
+		AllowMethods: 		[]string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
+		AllowHeaders: 		[]string{"Content-Type", "Authorization", "Origin", "Accept"},
+		AllowCredentials: true,
+		MaxAge: 					time.Hour * 12,
+	}))
 
 	api := router.Group("/api")
 	v1 := api.Group("/v1")
