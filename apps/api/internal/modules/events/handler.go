@@ -3,6 +3,7 @@ package events
 import (
 	"errors"
 	"fmt"
+	"math"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -64,12 +65,29 @@ func (h *Handler) FindAll(c *gin.Context) {
 		fmt.Sscanf(l, "%d", &limit)
 	}
 
+	if page < 1 {
+		page = 1
+	}
+	
+	if limit < 1 {
+		limit = 10
+	}
+
+	if limit > 100 {
+		limit = 100
+	}
+
 	offset := (page - 1) * limit
 	
-	events, err := h.service.FindAll(c.Request.Context(), limit, offset)
+	events, total, err := h.service.FindAll(c.Request.Context(), limit, offset)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get events"})
 		return
+	}
+
+	totalPages := 0
+	if total > 0 {
+		totalPages = int(math.Ceil(float64(total) / float64(limit)))
 	}
 
 	c.JSON(http.StatusOK, gin.H{
@@ -77,6 +95,8 @@ func (h *Handler) FindAll(c *gin.Context) {
 		"meta": gin.H{
 			"page": page,
 			"limit": limit,
+			"total": total,
+			"total_pages": totalPages,
 		},
 	})
 }

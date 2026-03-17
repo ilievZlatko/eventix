@@ -114,3 +114,16 @@ func (r *Repository) FindByID(ctx context.Context, id string) (*Event, error) {
 
 	return &event, nil
 }
+
+func (r *Repository) Count(ctx context.Context) (int, error) {
+	query := `SELECT COUNT(*) FROM events`
+
+	var total int
+
+	err := r.db.QueryRow(ctx, query).Scan(&total)
+	if err != nil {
+		return 0, err
+	}
+
+	return total, nil
+}

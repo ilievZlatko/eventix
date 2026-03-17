@@ -7,12 +7,14 @@ import {
   type RegisterRequest,
 } from '@/features/auth/api/auth-api'
 import { useAuthStore } from '@/store/auth-store'
+import { useNavigate } from 'react-router'
 
 export function useLoginMutation({
   onError = () => {},
 }: {
   onError?: () => void
 }) {
+  const navigate = useNavigate()
   const setAuth = useAuthStore(state => state.setAuth)
   return useMutation({
     mutationFn: async (payload: LoginRequest) => {
@@ -25,6 +27,7 @@ export function useLoginMutation({
     },
     onSuccess: ({ access_token, user }) => {
       setAuth(access_token, user)
+      navigate('/')
     },
     onError,
   })
