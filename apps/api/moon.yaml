@@ -12,7 +12,6 @@ tasks:
     command: 'go run ./cmd/api'
     options:
       persistent: true
-      cache: false
       outputStyle: 'stream'
 
   build:

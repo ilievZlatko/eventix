@@ -102,7 +102,8 @@ func (h *Handler) FindAll(c *gin.Context) {
 }
 
 func (h *Handler) FindByID(c *gin.Context) {
-	event, err := h.service.FindByID(c.Request.Context(), c.Param("id"))
+	userID := c.GetString("user_id")
+	event, err := h.service.FindByID(c.Request.Context(), c.Param("id"), userID)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			c.JSON(http.StatusNotFound, gin.H{"error": "Event not found"})

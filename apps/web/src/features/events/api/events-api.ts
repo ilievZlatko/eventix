@@ -1,15 +1,8 @@
 import { api } from '@/lib/api'
-
-export type Event = {
-  id: string
-  title: string
-  description: string
-  location: string
-  starts_at: string
-}
+import type { EventDetails } from './event-api'
 
 export type EventsResponse = {
-  data: Event[]
+  data: EventDetails[]
   meta: {
     page: number
     limit: number

@@ -16,8 +16,27 @@ export const EventPage = () => {
   if (isError || !data) return <div className='p-6'>Failed to load event</div>
 
   const event = data
+  const isFull = event.booked_count >= event.capacity
+  const isBooked = event.is_booked
+
+  function getButtonLabel() {
+    if (bookingMutation.isPending) return 'Booking...'
+    if (isBooked) return 'Already booked'
+    if (isFull) return 'Event is full'
+    return 'Book Event'
+  }
 
   function handleBook() {
+    if (isFull) {
+      toast.error('Event is full')
+      return
+    }
+
+    if (isBooked) {
+      toast.error('You have already booked this event')
+      return
+    }
+
     bookingMutation.mutate(undefined, {
       onSuccess: () => {
         toast.success('Booking successful')
@@ -29,7 +48,7 @@ export const EventPage = () => {
   }
 
   return (
-    <div className='max-w-2xl'>
+    <div className='max-w-2xl space-y-6'>
       <Card>
         <CardHeader>
           <CardTitle>{event.title}</CardTitle>
@@ -46,11 +65,23 @@ export const EventPage = () => {
             🕓 {new Date(event.starts_at).toLocaleDateString()}
           </div>
 
+          <div className='text-sm font-medium'>
+            {event.booked_count} / {event.capacity} spots taken
+          </div>
+
+          {isBooked && (
+            <div className='text-sm text-green-600'>
+              You have already booked this event
+            </div>
+          )}
+
+          {isFull && <div className='text-sm text-red-600'>Event is full</div>}
+
           <Button
             onClick={handleBook}
             disabled={bookingMutation.isPending}
           >
-            {bookingMutation.isPending ? 'Booking...' : 'Book Event'}
+            {getButtonLabel()}
           </Button>
         </CardContent>
       </Card>

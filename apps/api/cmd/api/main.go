@@ -37,11 +37,12 @@ func main() {
 
 	// EVENTS MODULE
 	eventsRepo := events.NewRepository(pool)
-	eventsService := events.NewService(eventsRepo)
+	bookingsRepo := bookings.NewRepository(pool)
+
+	eventsService := events.NewService(eventsRepo, bookingsRepo)
 	eventsHandler := events.NewHandler(eventsService)
 
 	// BOOKINGS MODULE
-	bookingsRepo := bookings.NewRepository(pool)
 	bookingsService := bookings.NewService(bookingsRepo, eventsRepo)
 	bookingsHandler := bookings.NewHandler(bookingsService)
 	
